@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CloudOps Tasks - Microservice Architecture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #f87171;
+      --purple: #c084fc;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .container { max-width: 1300px; margin: 0 auto; }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .logo-group h1 { font-size: 1.5rem; font-weight: 700; color: var(--text-main); }
+    .logo-group span { font-size: 0.85rem; color: var(--primary); font-weight: 500; }
+    
+    .health-bar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .health-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-green { background-color: var(--success); box-shadow: 0 0 8px var(--success); }
+    .dot-red { background-color: var(--danger); box-shadow: 0 0 8px var(--danger); }
+
+    /* Main Grid */
+    .grid-layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 960px) {
+      .grid-layout { grid-template-columns: 1fr; }
+    }
+
+    /* Cards */
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .card-title { font-size: 1.1rem; font-weight: 600; }
+
+    /* Buttons & Inputs */
+    button {
+      cursor: pointer;
+      font-family: inherit;
+      border: none;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #0f172a;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 8px;
+    }
+    .btn-primary:hover { background: var(--primary-hover); color: white; }
+    .btn-sm { padding: 4px 10px; font-size: 0.8rem; border-radius: 6px; }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+    }
+    .btn-outline:hover { color: var(--text-main); border-color: var(--primary); }
+    .btn-danger { background: rgba(248, 113, 113, 0.2); color: var(--danger); }
+    .btn-danger:hover { background: var(--danger); color: white; }
+
+    input, select, textarea {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    /* Kanban Columns */
+    .kanban-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 768px) {
+      .kanban-grid { grid-template-columns: 1fr; }
+    }
+    .kanban-col {
+      background: #151f30;
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 380px;
+      border: 1px dashed var(--card-border);
+    }
+    .col-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .col-badge {
+      background: var(--card-bg);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+    }
+
+    /* Task Card */
+    .task-item {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 12px;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .task-item:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary);
+    }
+    .task-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 6px; }
+    .task-desc { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4; }
+    .task-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 8px;
+    }
+    .badge {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 0.7rem;
+    }
+    .badge-HIGH { background: rgba(248, 113, 113, 0.2); color: var(--danger); }
+    .badge-MEDIUM { background: rgba(251, 191, 36, 0.2); color: var(--warning); }
+    .badge-LOW { background: rgba(56, 189, 248, 0.2); color: var(--primary); }
+
+    /* Notification feed */
+    .notif-feed {
+      max-height: 480px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .notif-item {
+      background: #151f30;
+      border-left: 3px solid var(--purple);
+      padding: 10px 12px;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.8rem;
+    }
+    .notif-time { color: var(--text-muted); font-size: 0.7rem; margin-top: 4px; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 24px;
+      width: 100%;
+      max-width: 480px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-group">
+        <h1>CloudOps Tasks</h1>
+        <span>EKS &bull; GitOps &bull; Microservices Demo</span>
+      </div>
+      <div class="health-bar" id="healthOverview">
+        <div class="health-pill"><span class="dot dot-green"></span> Gateway: UP</div>
+        <div class="health-pill"><span class="dot dot-green" id="userDot"></span> User Service: ...</div>
+        <div class="health-pill"><span class="dot dot-green" id="taskDot"></span> Task Service: ...</div>
+        <div class="health-pill"><span class="dot dot-green" id="notifDot"></span> Notification Service: ...</div>
+      </div>
+    </header>
+
+    <div class="grid-layout">
+      <!-- Left Column: Tasks Board -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Task Management Board</div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-primary btn-sm" onclick="openTaskModal()">+ New Task</button>
+              <button class="btn-outline btn-sm" onclick="openUserModal()">+ New User</button>
+            </div>
+          </div>
+
+          <div class="kanban-grid">
+            <!-- TODO -->
+            <div class="kanban-col">
+              <div class="col-title">
+                <span>To Do</span>
+                <span class="col-badge" id="count-todo">0</span>
+              </div>
+              <div id="col-todo-items"></div>
+            </div>
+
+            <!-- IN_PROGRESS -->
+            <div class="kanban-col">
+              <div class="col-title">
+                <span>In Progress</span>
+                <span class="col-badge" id="count-in_progress">0</span>
+              </div>
+              <div id="col-in_progress-items"></div>
+            </div>
+
+            <!-- DONE -->
+            <div class="kanban-col">
+              <div class="col-title">
+                <span>Done</span>
+                <span class="col-badge" id="count-done">0</span>
+              </div>
+              <div id="col-done-items"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Notifications & Users -->
+      <div>
+        <!-- Live Notifications -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Live Notifications Dispatcher</div>
+            <span class="col-badge" style="background: rgba(192, 132, 252, 0.2); color: var(--purple);">Async Events</span>
+          </div>
+          <div class="notif-feed" id="notifFeed">
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 20px;">
+              No notifications dispatched yet. Create or update a task to trigger events!
+            </div>
+          </div>
+        </div>
+
+        <!-- Users List -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Active Engineers</div>
+            <span class="col-badge" id="userCount">0</span>
+          </div>
+          <div id="usersList" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
+            <!-- Rendered users -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Task Modal -->
+  <div class="modal-backdrop" id="taskModal">
+    <div class="modal-box">
+      <div class="card-header">
+        <h3 class="card-title">Create New Task</h3>
+        <button class="btn-outline btn-sm" onclick="closeTaskModal()">&times;</button>
+      </div>
+      <form onsubmit="handleCreateTask(event)">
+        <label style="font-size: 0.8rem; color: var(--text-muted);">Title</label>
+        <input type="text" id="taskTitle" placeholder="e.g. Implement AWS ALB Controller" required>
+
+        <label style="font-size: 0.8rem; color: var(--text-muted);">Description</label>
+        <textarea id="taskDesc" rows="3" placeholder="Details about this DevOps deliverable..."></textarea>
+
+        <label style="font-size: 0.8rem; color: var(--text-muted);">Assignee</label>
+        <select id="taskAssignee" required></select>
+
+        <label style="font-size: 0.8rem; color: var(--text-muted);">Priority</label>
+        <select id="taskPriority">
+          <option value="LOW">LOW</option>
+          <option value="MEDIUM" selected>MEDIUM</option>
+          <option value="HIGH">HIGH</option>
+        </select>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px;">
+          <button type="button" class="btn-outline btn-sm" onclick="closeTaskModal()">Cancel</button>
+          <button type="submit" class="btn-primary btn-sm">Create Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create User Modal -->
+  <div class="modal-backdrop" id="userModal">
+    <div class="modal-box">
+      <div class="card-header">
+        <h3 class="card-title">Register Team Member</h3>
+        <button class="btn-outline btn-sm" onclick="closeUserModal()">&times;</button>
+      </div>
+      <form onsubmit="handleCreateUser(event)">
+        <label style="font-size: 0.8rem; color: var(--text-muted);">Full Name</label>
+        <input type="text" id="userName" placeholder="e.g. Clara Cloud" required>
+
+        <label style="font-size: 0.8rem; color: var(--text-muted);">Email</label>
+        <input type="email" id="userEmail" placeholder="e.g. clara@company.internal" required>
+
+        <label style="font-size: 0.8rem; color: var(--text-muted);">Role</label>
+        <input type="text" id="userRole" placeholder="e.g. DevOps Engineer" value="DevOps Engineer">
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px;">
+          <button type="button" class="btn-outline btn-sm" onclick="closeUserModal()">Cancel</button>
+          <button type="submit" class="btn-primary btn-sm">Add User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let users = [];
+    let tasks = [];
+
+    async function checkHealth() {
+      try {
+        const res = await fetch('/api/health-overview');
+        const data = await res.json();
+        data.services.forEach(s => {
+          let dotId = '';
+          if (s.name.includes('User')) dotId = 'userDot';
+          if (s.name.includes('Task')) dotId = 'taskDot';
+          if (s.name.includes('Notification')) dotId = 'notifDot';
+          
+          const el = document.getElementById(dotId);
+          if (el) {
+            el.className = s.status === 'UP' ? 'dot dot-green' : 'dot dot-red';
+            el.parentElement.innerHTML = `<span class="${el.className}"></span> ${s.name}: ${s.status}`;
+          }
+        });
+      } catch (e) {
+        console.error('Health check failed', e);
+      }
+    }
+
+    async function fetchUsers() {
+      try {
+        const res = await fetch('/api/users');
+        const json = await res.json();
+        users = json.data || [];
+        renderUsers();
+      } catch (e) { console.error(e); }
+    }
+
+    async function fetchTasks() {
+      try {
+        const res = await fetch('/api/tasks');
+        const json = await res.json();
+        tasks = json.data || [];
+        renderTasks();
+      } catch (e) { console.error(e); }
+    }
+
+    async function fetchNotifications() {
+      try {
+        const res = await fetch('/api/notifications');
+        const json = await res.json();
+        renderNotifications(json.data || []);
+      } catch (e) { console.error(e); }
+    }
+
+    function renderUsers() {
+      document.getElementById('userCount').innerText = users.length;
+      const select = document.getElementById('taskAssignee');
+      select.innerHTML = users.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('');
+
+      const list = document.getElementById('usersList');
+      list.innerHTML = users.map(u => `
+        <div style="padding: 8px; background: #151f30; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong>${u.name}</strong>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">${u.email}</div>
+          </div>
+          <span class="col-badge">${u.role}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderTasks() {
+      const todoEl = document.getElementById('col-todo-items');
+      const inProgEl = document.getElementById('col-in_progress-items');
+      const doneEl = document.getElementById('col-done-items');
+
+      const todos = tasks.filter(t => t.status === 'TODO');
+      const inProgs = tasks.filter(t => t.status === 'IN_PROGRESS');
+      const dones = tasks.filter(t => t.status === 'DONE');
+
+      document.getElementById('count-todo').innerText = todos.length;
+      document.getElementById('count-in_progress').innerText = inProgs.length;
+      document.getElementById('count-done').innerText = dones.length;
+
+      todoEl.innerHTML = todos.map(t => taskHtml(t, ['IN_PROGRESS', 'DONE'])).join('');
+      inProgEl.innerHTML = inProgs.map(t => taskHtml(t, ['TODO', 'DONE'])).join('');
+      doneEl.innerHTML = dones.map(t => taskHtml(t, ['IN_PROGRESS'])).join('');
+    }
+
+    function taskHtml(task, nextStatuses) {
+      const assignee = users.find(u => u.id === task.user_id)?.name || 'Unassigned';
+      const actionButtons = nextStatuses.map(status => `
+        <button class="btn-outline btn-sm" onclick="moveTask('${task.id}', '${status}')">Move to ${status}</button>
+      `).join('');
+
+      return `
+        <div class="task-item">
+          <div class="task-title">${task.title}</div>
+          <div class="task-desc">${task.description || 'No description provided'}</div>
+          <div style="margin-bottom: 8px;">
+            <span class="badge badge-${task.priority}">${task.priority}</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 8px;">Assignee: ${assignee}</span>
+          </div>
+          <div class="task-footer">
+            <div style="display: flex; gap: 4px;">${actionButtons}</div>
+            <button class="btn-danger btn-sm" onclick="deleteTaskItem('${task.id}')">Del</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderNotifications(notifs) {
+      const container = document.getElementById('notifFeed');
+      if (notifs.length === 0) return;
+      container.innerHTML = notifs.map(n => `
+        <div class="notif-item">
+          <div><strong>${n.eventType}</strong>: ${n.message}</div>
+          <div class="notif-time">${new Date(n.dispatchedAt).toLocaleTimeString()} via ${n.channel}</div>
+        </div>
+      `).join('');
+    }
+
+    async function moveTask(id, status) {
+      await fetch(`/api/tasks/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      await fetchTasks();
+      await fetchNotifications();
+    }
+
+    async function deleteTaskItem(id) {
+      if (!confirm('Delete task?')) return;
+      await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+      await fetchTasks();
+    }
+
+    async function handleCreateTask(e) {
+      e.preventDefault();
+      const body = {
+        title: document.getElementById('taskTitle').value,
+        description: document.getElementById('taskDesc').value,
+        userId: document.getElementById('taskAssignee').value,
+        priority: document.getElementById('taskPriority').value,
+        status: 'TODO'
+      };
+      await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      closeTaskModal();
+      document.getElementById('taskTitle').value = '';
+      document.getElementById('taskDesc').value = '';
+      await fetchTasks();
+      await fetchNotifications();
+    }
+
+    async function handleCreateUser(e) {
+      e.preventDefault();
+      const body = {
+        name: document.getElementById('userName').value,
+        email: document.getElementById('userEmail').value,
+        role: document.getElementById('userRole').value
+      };
+      await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      closeUserModal();
+      document.getElementById('userName').value = '';
+      document.getElementById('userEmail').value = '';
+      await fetchUsers();
+    }
+
+    function openTaskModal() { document.getElementById('taskModal').classList.add('open'); }
+    function closeTaskModal() { document.getElementById('taskModal').classList.remove('open'); }
+    function openUserModal() { document.getElementById('userModal').classList.add('open'); }
+    function closeUserModal() { document.getElementById('userModal').classList.remove('open'); }
+
+    // Init & Polling
+    checkHealth();
+    fetchUsers().then(fetchTasks);
+    fetchNotifications();
+
+    setInterval(() => {
+      checkHealth();
+      fetchNotifications();
+    }, 4000);
+  </script>
+</body>
+</html>

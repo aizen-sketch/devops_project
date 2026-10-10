@@ -1,0 +1,147 @@
+name: CI - Build, Test & Containerize Microservices
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'app/**'
+      - '.github/workflows/ci.yaml'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'app/**'
+      - '.github/workflows/ci.yaml'
+  workflow_dispatch:
+    inputs:
+      push_to_ecr:
+        description: 'Push images to Amazon ECR?'
+        type: boolean
+        default: false
+
+# Permissions for OIDC (used for AWS authentication later)
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  # Flip this flag to 'true' or pass workflow_dispatch input to activate ECR push
+  ENABLE_ECR_PUSH: ${{ inputs.push_to_ecr || false }}
+
+jobs:
+  # =========================================================================
+  # Stage 1: Unit Testing & Validation (Matrix across all microservices)
+  # =========================================================================
+  test:
+    name: Test - ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - user-service
+          - task-service
+          - notification-service
+          - frontend
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: app/services/${{ matrix.service }}/package.json
+
+      - name: Install Dependencies
+        working-directory: app/services/${{ matrix.service }}
+        run: npm install
+
+      - name: Run Unit Tests
+        working-directory: app/services/${{ matrix.service }}
+        run: npm test
+
+  # =========================================================================
+  # Stage 2: Docker Build & Security Vulnerability Scan (Trivy)
+  # =========================================================================
+  build-and-scan:
+    name: Build & Scan - ${{ matrix.service }}
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - user-service
+          - task-service
+          - notification-service
+          - frontend
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 1. Build Docker image locally and load into daemon for scanning
+      - name: Build Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: app/services/${{ matrix.service }}
+          file: app/services/${{ matrix.service }}/Dockerfile
+          load: true
+          tags: |
+            taskapp-${{ matrix.service }}:${{ github.sha }}
+            taskapp-${{ matrix.service }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # 2. Enterprise Security: Scan container with Trivy
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: taskapp-${{ matrix.service }}:${{ github.sha }}
+          format: 'table'
+          exit-code: '0' # Non-blocking for learning/development; change to '1' to enforce strict security gates
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      # =====================================================================
+      # Stage 3 (LATER): Authenticate & Push to Amazon ECR
+      # Activates when ENABLE_ECR_PUSH is true and AWS secrets are configured
+      # =====================================================================
+      - name: Configure AWS Credentials (Optional / Later)
+        if: env.ENABLE_ECR_PUSH == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          # Enterprise OIDC (recommended):
+          # role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          # OR IAM User Keys:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Log in to Amazon ECR (Optional / Later)
+        if: env.ENABLE_ECR_PUSH == 'true'
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Tag and Push Image to Amazon ECR (Optional / Later)
+        if: env.ENABLE_ECR_PUSH == 'true'
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          ECR_REPO_NAME="taskapp-${{ matrix.service }}"
+          
+          # Tag with Git SHA and latest
+          docker tag taskapp-${{ matrix.service }}:${{ github.sha }} $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG
+          docker tag taskapp-${{ matrix.service }}:${{ github.sha }} $ECR_REGISTRY/$ECR_REPO_NAME:latest
+          
+          echo "Pushing $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG to Amazon ECR..."
+          docker push $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPO_NAME:latest

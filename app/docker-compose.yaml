@@ -1,0 +1,147 @@
+services:
+  # ========================================================
+  # Shared Infrastructure: PostgreSQL
+  # ========================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: taskapp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - taskapp-net
+
+  # ========================================================
+  # Microservice 1: User Service
+  # ========================================================
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: taskapp-user-service
+    restart: unless-stopped
+    environment:
+      PORT: "3001"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: taskapp_user
+      DB_USER: postgres
+      DB_PASSWORD: postgrespassword
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3001/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - taskapp-net
+
+  # ========================================================
+  # Microservice 2: Notification Service
+  # ========================================================
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: taskapp-notification-service
+    restart: unless-stopped
+    environment:
+      PORT: "3003"
+      NOTIFICATION_CHANNEL: "EMAIL_SIMULATOR"
+    ports:
+      - "3003:3003"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3003/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - taskapp-net
+
+  # ========================================================
+  # Microservice 3: Task Service
+  # ========================================================
+  task-service:
+    build:
+      context: ./services/task-service
+      dockerfile: Dockerfile
+    container_name: taskapp-task-service
+    restart: unless-stopped
+    environment:
+      PORT: "3002"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: taskapp_task
+      DB_USER: postgres
+      DB_PASSWORD: postgrespassword
+      USER_SERVICE_URL: "http://user-service:3001"
+      NOTIFICATION_SERVICE_URL: "http://notification-service:3003"
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3002/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - taskapp-net
+
+  # ========================================================
+  # Microservice 4: Frontend Web UI & API Gateway
+  # ========================================================
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: Dockerfile
+    container_name: taskapp-frontend
+    restart: unless-stopped
+    environment:
+      PORT: "3000"
+      USER_SERVICE_URL: "http://user-service:3001"
+      TASK_SERVICE_URL: "http://task-service:3002"
+      NOTIFICATION_SERVICE_URL: "http://notification-service:3003"
+    ports:
+      - "3000:3000"
+    depends_on:
+      user-service:
+        condition: service_healthy
+      task-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - taskapp-net
+
+volumes:
+  postgres_data:
+
+networks:
+  taskapp-net:
+    driver: bridge
