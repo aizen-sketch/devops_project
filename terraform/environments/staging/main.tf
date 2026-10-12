@@ -154,7 +154,9 @@ module "alb" {
   vpc_id                = module.networking.vpc_id
   public_subnet_ids     = module.networking.public_subnet_ids
   alb_security_group_id = module.security_groups.alb_security_group_id
+  enable_https          = var.create_custom_domain_records
   acm_certificate_arn   = module.acm.certificate_arn
+  enable_access_logs    = false
   logs_bucket_id        = module.s3.logs_bucket_id
 }
 
@@ -198,9 +200,11 @@ module "rds" {
 module "monitoring" {
   source = "../../modules/monitoring"
 
-  project_name   = var.project_name
-  environment    = var.environment
-  cluster_name   = module.eks.cluster_name
-  alb_arn_suffix = module.alb.alb_arn
-  db_instance_id = module.rds.db_instance_id
+  project_name     = var.project_name
+  environment      = var.environment
+  cluster_name     = module.eks.cluster_name
+  alb_arn_suffix   = module.alb.alb_arn_suffix
+  db_instance_id   = module.rds.db_instance_id
+  enable_rds_alarm = true
+  enable_alb_alarm = true
 }

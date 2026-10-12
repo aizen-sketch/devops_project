@@ -23,10 +23,22 @@ variable "alb_security_group_id" {
   type        = string
 }
 
+variable "enable_https" {
+  description = "Whether to enable HTTPS listener (requires acm_certificate_arn)"
+  type        = bool
+  default     = false
+}
+
 variable "acm_certificate_arn" {
   description = "Optional ACM Certificate ARN for HTTPS listener"
   type        = string
   default     = ""
+}
+
+variable "enable_access_logs" {
+  description = "Whether to send ALB access logs to S3"
+  type        = bool
+  default     = false
 }
 
 variable "logs_bucket_id" {

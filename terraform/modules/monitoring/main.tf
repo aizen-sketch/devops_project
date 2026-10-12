@@ -42,7 +42,7 @@ resource "aws_sns_topic" "alerts" {
 
 # Alarm: RDS High CPU
 resource "aws_cloudwatch_metric_alarm" "rds_high_cpu" {
-  count               = var.db_instance_id != "" ? 1 : 0
+  count               = var.enable_rds_alarm ? 1 : 0
   alarm_name          = "${var.project_name}-${var.environment}-rds-high-cpu"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 2
@@ -66,7 +66,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_high_cpu" {
 
 # Alarm: ALB 5XX Target Errors
 resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
-  count               = var.alb_arn_suffix != "" ? 1 : 0
+  count               = var.enable_alb_alarm ? 1 : 0
   alarm_name          = "${var.project_name}-${var.environment}-alb-high-5xx"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2

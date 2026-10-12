@@ -11,7 +11,7 @@ resource "aws_lb" "main" {
   enable_deletion_protection = var.enable_deletion_protection
 
   dynamic "access_logs" {
-    for_each = var.logs_bucket_id != "" ? [1] : []
+    for_each = var.enable_access_logs ? [1] : []
     content {
       bucket  = var.logs_bucket_id
       prefix  = "alb-logs"
@@ -56,7 +56,7 @@ resource "aws_lb_target_group" "default" {
 }
 
 # ==============================================================================
-# 3. HTTP Listener (Port 80) with HTTP-to-HTTPS Redirection
+# 3. HTTP Listener (Port 80)
 # ==============================================================================
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
@@ -64,7 +64,7 @@ resource "aws_lb_listener" "http" {
   protocol          = "HTTP"
 
   dynamic "default_action" {
-    for_each = var.acm_certificate_arn != "" ? [1] : []
+    for_each = var.enable_https ? [1] : []
     content {
       type = "redirect"
 
@@ -77,7 +77,7 @@ resource "aws_lb_listener" "http" {
   }
 
   dynamic "default_action" {
-    for_each = var.acm_certificate_arn == "" ? [1] : []
+    for_each = var.enable_https ? [] : [1]
     content {
       type             = "forward"
       target_group_arn = aws_lb_target_group.default.arn
@@ -89,7 +89,7 @@ resource "aws_lb_listener" "http" {
 # 4. HTTPS Listener (Port 443)
 # ==============================================================================
 resource "aws_lb_listener" "https" {
-  count             = var.acm_certificate_arn != "" ? 1 : 0
+  count             = var.enable_https ? 1 : 0
   load_balancer_arn = aws_lb.main.arn
   port              = 443
   protocol          = "HTTPS"

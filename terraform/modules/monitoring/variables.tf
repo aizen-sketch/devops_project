@@ -25,6 +25,18 @@ variable "db_instance_id" {
   default     = ""
 }
 
+variable "enable_rds_alarm" {
+  description = "Whether to create CloudWatch metric alarm for RDS CPU utilization"
+  type        = bool
+  default     = true
+}
+
+variable "enable_alb_alarm" {
+  description = "Whether to create CloudWatch metric alarm for ALB 5XX errors"
+  type        = bool
+  default     = true
+}
+
 variable "log_retention_days" {
   description = "Number of days to retain CloudWatch logs"
   type        = number
