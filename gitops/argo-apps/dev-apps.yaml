@@ -1,0 +1,147 @@
+# =============================================================================
+# Dev Environment: Database (Wave 1)
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dev-postgres
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/parthasarathi-mandal/devops_project.git'
+    targetRevision: HEAD
+    path: gitops/environments/dev
+    directory:
+      include: 'postgres.yaml'
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: taskapp-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+---
+# =============================================================================
+# Dev Environment: User Service (Wave 2)
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dev-user-service
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/parthasarathi-mandal/devops_project.git'
+    targetRevision: HEAD
+    path: gitops/charts/microservice
+    helm:
+      valueFiles:
+        - ../../environments/dev/user-service-values.yaml
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: taskapp-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+---
+# =============================================================================
+# Dev Environment: Notification Service (Wave 2)
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dev-notification-service
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/parthasarathi-mandal/devops_project.git'
+    targetRevision: HEAD
+    path: gitops/charts/microservice
+    helm:
+      valueFiles:
+        - ../../environments/dev/notification-service-values.yaml
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: taskapp-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+---
+# =============================================================================
+# Dev Environment: Task Service (Wave 3 - depends on User & Notification)
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dev-task-service
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/parthasarathi-mandal/devops_project.git'
+    targetRevision: HEAD
+    path: gitops/charts/microservice
+    helm:
+      valueFiles:
+        - ../../environments/dev/task-service-values.yaml
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: taskapp-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+---
+# =============================================================================
+# Dev Environment: Frontend & Ingress Gateway (Wave 4)
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dev-frontend
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/parthasarathi-mandal/devops_project.git'
+    targetRevision: HEAD
+    path: gitops/charts/microservice
+    helm:
+      valueFiles:
+        - ../../environments/dev/frontend-values.yaml
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: taskapp-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

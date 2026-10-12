@@ -1,0 +1,48 @@
+nameOverride: frontend
+fullnameOverride: frontend
+replicaCount: 2
+environment: dev
+
+image:
+  repository: taskapp-frontend
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: "alb"
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
+  hosts:
+    - paths:
+        - path: /
+          pathType: Prefix
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 70
+
+env:
+  PORT: "3000"
+  USER_SERVICE_URL: "http://user-service:80"
+  TASK_SERVICE_URL: "http://task-service:80"
+  NOTIFICATION_SERVICE_URL: "http://notification-service:80"
