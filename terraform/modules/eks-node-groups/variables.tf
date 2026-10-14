@@ -58,3 +58,9 @@ variable "disk_size" {
   type        = number
   default     = 50
 }
+
+variable "ami_type" {
+  description = "Type of Amazon Machine Image (AMI) associated with the EKS Node Group. EKS 1.30+ requires AL2023."
+  type        = string
+  default     = "AL2023_x86_64_STANDARD"
+}

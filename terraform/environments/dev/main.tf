@@ -96,6 +96,7 @@ module "eks" {
   environment               = var.environment
   cluster_name              = local.cluster_name
   cluster_version           = var.cluster_version
+  cluster_log_types         = var.cluster_log_types
   vpc_id                    = module.networking.vpc_id
   private_app_subnet_ids    = module.networking.private_app_subnet_ids
   cluster_security_group_id = module.security_groups.eks_cluster_security_group_id
@@ -113,6 +114,7 @@ module "eks_node_groups" {
   private_app_subnet_ids      = module.networking.private_app_subnet_ids
   eks_nodes_security_group_id = module.security_groups.eks_nodes_security_group_id
   instance_types              = var.eks_instance_types
+  ami_type                    = var.eks_ami_type
   desired_size                = var.eks_desired_size
   min_size                    = var.eks_min_size
   max_size                    = var.eks_max_size
@@ -254,11 +256,12 @@ module "rds" {
 module "monitoring" {
   source = "../../modules/monitoring"
 
-  project_name     = var.project_name
-  environment      = var.environment
-  cluster_name     = module.eks.cluster_name
-  alb_arn_suffix   = module.alb.alb_arn_suffix
-  db_instance_id   = module.rds.db_instance_id
-  enable_rds_alarm = true
-  enable_alb_alarm = true
+  project_name         = var.project_name
+  environment          = var.environment
+  cluster_name         = module.eks.cluster_name
+  alb_arn_suffix       = module.alb.alb_arn_suffix
+  db_instance_id       = module.rds.db_instance_id
+  enable_rds_alarm     = true
+  enable_alb_alarm     = true
+  create_eks_log_group = var.create_eks_log_group
 }

@@ -42,15 +42,15 @@ variable "allocated_storage" {
 }
 
 variable "max_allocated_storage" {
-  description = "Maximum storage limit for autoscaling in gigabytes"
+  description = "Maximum storage limit for autoscaling in gigabytes (20 for Free Tier)"
   type        = number
-  default     = 100
+  default     = 20
 }
 
 variable "instance_class" {
-  description = "RDS instance class"
+  description = "RDS instance class (db.t4g.micro is Free Tier eligible)"
   type        = string
-  default     = "db.t4g.medium"
+  default     = "db.t4g.micro"
 }
 
 variable "engine" {
@@ -72,9 +72,9 @@ variable "multi_az" {
 }
 
 variable "backup_retention_period" {
-  description = "The days to retain backups for"
+  description = "The days to retain backups for (1 day maximum for AWS Free Tier accounts)"
   type        = number
-  default     = 7
+  default     = 1
 }
 
 variable "skip_final_snapshot" {

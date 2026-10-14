@@ -42,3 +42,9 @@ variable "log_retention_days" {
   type        = number
   default     = 30
 }
+
+variable "create_eks_log_group" {
+  description = "Whether to create CloudWatch log group for EKS control plane (default false to prevent ResourceAlreadyExistsException and reduce logging cost)"
+  type        = bool
+  default     = false
+}

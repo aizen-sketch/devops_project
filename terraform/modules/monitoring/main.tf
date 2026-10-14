@@ -2,6 +2,7 @@
 # 1. CloudWatch Log Groups
 # ==============================================================================
 resource "aws_cloudwatch_log_group" "eks_cluster" {
+  count             = var.create_eks_log_group ? 1 : 0
   name              = "/aws/eks/${var.cluster_name}/cluster"
   retention_in_days = var.log_retention_days
 

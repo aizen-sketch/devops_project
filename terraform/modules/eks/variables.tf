@@ -51,3 +51,9 @@ variable "public_access_cidrs" {
   type        = list(string)
   default     = ["0.0.0.0/0"]
 }
+
+variable "cluster_log_types" {
+  description = "List of desired control plane logging to enable"
+  type        = list(string)
+  default     = []
+}

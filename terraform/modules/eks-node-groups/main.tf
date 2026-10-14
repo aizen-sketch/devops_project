@@ -95,6 +95,7 @@ resource "aws_eks_node_group" "main" {
   node_role_arn   = aws_iam_role.node.arn
   subnet_ids      = var.private_app_subnet_ids
   capacity_type   = var.capacity_type
+  ami_type        = var.ami_type
 
   scaling_config {
     desired_size = var.desired_size

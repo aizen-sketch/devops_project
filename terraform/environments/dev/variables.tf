@@ -72,6 +72,12 @@ variable "eks_instance_types" {
   default     = ["t3.medium"]
 }
 
+variable "eks_ami_type" {
+  description = "AMI Type for EKS node group (EKS 1.30+ requires AL2023)"
+  type        = string
+  default     = "AL2023_x86_64_STANDARD"
+}
+
 variable "eks_desired_size" {
   description = "Desired number of worker nodes"
   type        = number
@@ -90,6 +96,18 @@ variable "eks_max_size" {
   default     = 5
 }
 
+variable "cluster_log_types" {
+  description = "Desired control plane logging types to enable in EKS (empty for dev/free tier to avoid logging costs)"
+  type        = list(string)
+  default     = []
+}
+
+variable "create_eks_log_group" {
+  description = "Whether to create CloudWatch log group for EKS control plane in Terraform"
+  type        = bool
+  default     = false
+}
+
 # --- Database ---
 variable "db_name" {
   description = "Database name"
@@ -104,9 +122,9 @@ variable "db_username" {
 }
 
 variable "db_instance_class" {
-  description = "RDS database instance class"
+  description = "RDS database instance class (db.t4g.micro is Free Tier eligible)"
   type        = string
-  default     = "db.t4g.medium"
+  default     = "db.t4g.micro"
 }
 
 variable "db_multi_az" {
@@ -116,9 +134,9 @@ variable "db_multi_az" {
 }
 
 variable "db_backup_retention_period" {
-  description = "Backup retention period in days"
+  description = "Backup retention period in days (1 day maximum for AWS Free Tier accounts)"
   type        = number
-  default     = 7
+  default     = 1
 }
 
 variable "db_port" {

@@ -77,7 +77,7 @@ resource "aws_eks_cluster" "main" {
     resources = ["secrets"]
   }
 
-  enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+  enabled_cluster_log_types = var.cluster_log_types
 
   depends_on = [
     aws_iam_role_policy_attachment.cluster_policy,
